@@ -1,8 +1,7 @@
 import qualified Data.List
 import qualified Data.Array
 import qualified Data.Bits
-import qualified Data.Map
-import Data.Maybe (mapMaybe)
+
 -- PFL 2024/2025 Practical assignment 1
 
 -- Uncomment the some/all of the first three lines to import the modules, do not change the code of these lines.
