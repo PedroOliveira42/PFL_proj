@@ -1,7 +1,8 @@
 import qualified Data.List
 import qualified Data.Array
 import qualified Data.Bits
-
+import qualified Data.Map
+import Data.Maybe (mapMaybe)
 -- PFL 2024/2025 Practical assignment 1
 
 -- Uncomment the some/all of the first three lines to import the modules, do not change the code of these lines.
@@ -13,7 +14,7 @@ type Distance = Int
 type RoadMap = [(City,City,Distance)]
 
 cities :: RoadMap -> [City]
-cities roadmap = Data.List.nub [city | (city1, city2, _) <- roadmap, city <- [city1, city2]]
+cities roadMap = Data.List.nub [city | (city1, city2, _) <- roadMap, city <- [city1, city2]]
 
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent roadMap city1 city2 = any (\(n1, n2, _) -> (n1 == city1 && n2 == city2) || (n1 == city2 && n2 == city1)) roadMap
@@ -29,10 +30,26 @@ adjacentAux :: RoadMap -> City -> [(City,Distance)]
 adjacentAux = undefined
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
-pathDistance = undefined
+pathDistance _ [] = Just 0
+pathDistance _ [_] = Just 0
+pathDistance roadMap (city1:city2:rest)
+    | areAdjacent roadMap city1 city2 =
+      case distance roadMap city1 city2 of
+        Just dist -> case pathDistance roadMap (city2:rest) of
+            Just distRest -> Just (dist + distRest)
+            Nothing -> Nothing
+        Nothing -> Nothing 
+    | otherwise = Nothing
+
 
 rome :: RoadMap -> [City]
-rome = undefined
+rome roadMap = [city | (city, degree) <- cityDeegreList, degree == max] 
+  where
+    allRoads = [city | (city1, city2, _) <- roadMap, city <- [city1, city2]] 
+    cityGroups = Data.List.group (Data.List.sort allRoads)
+    cityDeegreList = [(head cities, length cities) | cities <- cityGroups]
+    max = maximum [degree | (_, degree) <- cityDeegreList]
+
 
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected = undefined
