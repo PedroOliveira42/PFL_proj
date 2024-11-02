@@ -25,7 +25,7 @@ add1ToAdjList [] (city1,city2,distance) = [(city1,[(city2,distance)])]
 add1ToAdjList ((c1,c_adj):xs) (city1,city2,distance) = if c1 == city1 then (c1, c_adj ++ [(city2,distance)]):xs else (c1,c_adj) : add1ToAdjList xs (city1, city2, distance)
 
 cities :: RoadMap -> [City]
-cities roadmap = Data.List.nub [city | (city1, city2, _) <- roadmap, city <- [city1, city2]]
+cities roadMap = Data.List.nub [city | (city1, city2, _) <- roadMap, city <- [city1, city2]]
 
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent roadMap city1 city2 = any (\(n1, n2, _) -> (n1 == city1 && n2 == city2) || (n1 == city2 && n2 == city1)) roadMap
@@ -48,10 +48,26 @@ getNeighbors adjList city = case lookup city adjList of
                                 Nothing -> []
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
-pathDistance = undefined
+pathDistance _ [] = Just 0
+pathDistance _ [_] = Just 0
+pathDistance roadMap (city1:city2:rest)
+    | areAdjacent roadMap city1 city2 =
+      case distance roadMap city1 city2 of
+        Just dist -> case pathDistance roadMap (city2:rest) of
+            Just distRest -> Just (dist + distRest)
+            Nothing -> Nothing
+        Nothing -> Nothing 
+    | otherwise = Nothing
+
 
 rome :: RoadMap -> [City]
-rome = undefined
+rome roadMap = [city | (city, degree) <- cityDeegreList, degree == max] 
+  where
+    allRoads = [city | (city1, city2, _) <- roadMap, city <- [city1, city2]] 
+    cityGroups = Data.List.group (Data.List.sort allRoads)
+    cityDeegreList = [(head cities, length cities) | cities <- cityGroups]
+    max = maximum [degree | (_, degree) <- cityDeegreList]
+
 
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected roadmap = length (dfs adjList origin []) == length (cities roadmap)
