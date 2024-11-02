@@ -12,6 +12,18 @@ type Distance = Int
 
 type RoadMap = [(City,City,Distance)]
 
+type AdjList = [(City,[(City,Distance)])]
+
+buildAdjList :: RoadMap -> AdjList
+buildAdjList roadmap = foldl add2ToAdjList [] roadmap
+
+add2ToAdjList :: AdjList -> (City,City,Distance) -> AdjList
+add2ToAdjList adjList (city1,city2,dist) = add1ToAdjList (add1ToAdjList adjList (city1,city2,dist)) (city2, city1, dist)
+
+add1ToAdjList :: AdjList -> (City,City,Distance) -> AdjList
+add1ToAdjList [] (city1,city2,distance) = [(city1,[(city2,distance)])]
+add1ToAdjList ((c1,c_adj):xs) (city1,city2,distance) = if c1 == city1 then (c1, c_adj ++ [(city2,distance)]):xs else (c1,c_adj) : add1ToAdjList xs (city1, city2, distance)
+
 cities :: RoadMap -> [City]
 cities roadmap = Data.List.nub [city | (city1, city2, _) <- roadmap, city <- [city1, city2]]
 
@@ -25,8 +37,15 @@ distance ((c1, c2, dist):xs) city1 city2 = if ((c1 == city1 && c2 == city2) || (
 adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent roadMap origin = [(city, dist) | (city1,city2,dist) <- roadMap, city <- if origin == city1  then [city2] else if origin == city2 then [city1] else [] ]
 
-adjacentAux :: RoadMap -> City -> [(City,Distance)]
-adjacentAux = undefined
+adjacentAdjList :: AdjList -> City -> [(City,Distance)]
+adjacentAdjList adjList city = case lookup city adjList of
+                                    Just neighbors -> neighbors
+                                    Nothing -> []
+
+getNeighbors :: AdjList -> City -> [City]
+getNeighbors adjList city = case lookup city adjList of
+                                Just neighbors -> map fst neighbors
+                                Nothing -> []
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance = undefined
@@ -35,10 +54,43 @@ rome :: RoadMap -> [City]
 rome = undefined
 
 isStronglyConnected :: RoadMap -> Bool
-isStronglyConnected = undefined
+isStronglyConnected roadmap = length (dfs adjList origin []) == length (cities roadmap)
+    where
+        adjList = buildAdjList roadmap
+        origin = case roadmap of
+                    ((firstCity,_,_) : _) -> firstCity
+                    [] -> error "There are no edges"
+
+
+dfs :: AdjList -> City -> [City] -> [City]
+dfs adjList newCity visited
+    | elem newCity visited = visited
+    | otherwise = foldl (\visitedList neighbor -> dfs adjList neighbor visitedList) (newCity : visited) neighbors
+    where
+        neighbors = getNeighbors adjList newCity
+
+
+bfs :: City -> City -> AdjList -> [Path]
+bfs c1 c2 adjList = bfsAux [(0,[c1])] [] maxInt
+    where
+        maxInt = maxBound :: Int
+        bfsAux :: [(Distance, Path)] -> [Path] -> Int -> [Path]
+        bfsAux [] shortestPaths _ = shortestPaths
+        bfsAux ((dist, path@(current:_)):queue) shortestPaths minDistance
+            | current == c2 && ( null shortestPaths || dist < minDistance) = bfsAux queue [path] dist
+            | current == c2 && dist == minDistance = bfsAux queue (path : shortestPaths) minDistance
+            | current == c2 = bfsAux queue shortestPaths minDistance
+            | otherwise =
+                let neighbors = adjacentAdjList adjList current
+                    newPaths  = [(dist + d, nextCity : path) | (nextCity, d) <- neighbors, not (elem nextCity path)]
+                in bfsAux (queue ++ newPaths) shortestPaths minDistance
+
 
 shortestPath :: RoadMap -> City -> City -> [Path]
-shortestPath = undefined
+shortestPath roadMap c1 c2
+    | c1 == c2 = [[c1]]
+    | otherwise = bfs c1 c2 (buildAdjList roadMap)
+
 
 travelSales :: RoadMap -> Path
 travelSales = undefined
@@ -54,3 +106,6 @@ gTest2 = [("0","1",10),("0","2",15),("0","3",20),("1","2",35),("1","3",25),("2",
 
 gTest3 :: RoadMap -- unconnected graph
 gTest3 = [("0","1",4),("2","3",2)]
+
+gTest4 :: RoadMap -- unconnected graph
+gTest4 = [("0","1",1),("0","2",2),("1","3",2),("2","3",1)]
