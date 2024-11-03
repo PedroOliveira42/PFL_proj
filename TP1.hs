@@ -90,7 +90,7 @@ bfs :: City -> City -> AdjList -> [Path]
 bfs c1 c2 adjList = bfsAux [(0,[c1])] [] maxInt
     where
         maxInt = maxBound :: Int
-        bfsAux :: [(Distance, Path)] -> [Path] -> Int -> [Path]
+        bfsAux :: [(Distance, Path)] -> [Path] -> Distance -> [Path]
         bfsAux [] shortestPaths _ = shortestPaths
         bfsAux ((dist, path@(current:_)):queue) shortestPaths minDistance
             | current == c2 && ( null shortestPaths || dist < minDistance) = bfsAux queue [path] dist
@@ -109,13 +109,35 @@ shortestPath roadMap c1 c2
 
 
 travelSales :: RoadMap -> Path
-travelSales = undefined
+travelSales roadMap = tspAux adjList [(0,[origin])] maxInt numCities []
+    where
+        adjList = buildAdjList roadMap 
+        origin = case roadMap of
+                    ((firstCity,_,_) : _) -> firstCity
+                    [] -> error "There are no edges"
+        maxInt = maxBound :: Int
+        numCities = length adjList
+
+        tspAux :: AdjList -> [(Distance,Path)] -> Distance -> Int -> Path -> Path
+        tspAux _ [] _ _ bestPath = bestPath
+        tspAux adjList ((currDist, currPath@(currCity : currVisited)) : queue) bestDist numCities bestPath
+            | numCities == length currPath =
+                case lookup origin (adjacentAdjList adjList currCity) of
+                    Just returnDist -> if (currDist + returnDist) < bestDist 
+                                            then tspAux adjList queue (currDist + returnDist) numCities (origin : currPath)   -- Found a smaller TSP path
+                                            else tspAux adjList queue bestDist numCities bestPath                               -- The return edge makes the path too long
+                    Nothing -> tspAux adjList queue bestDist numCities bestPath                                                 -- No edge to return to the first edge
+            | otherwise = tspAux adjList (queue ++ newPaths) bestDist numCities bestPath  
+                where 
+                    neighbors = adjacentAdjList adjList currCity
+                    newPaths = [(currDist + dist, nextCity : currPath) | (nextCity,dist) <- neighbors, not (elem nextCity currPath), currDist + dist <= bestDist]
 
 tspBruteForce :: RoadMap -> Path
 tspBruteForce = undefined -- only for groups of 3 people; groups of 2 people: do not edit this function
 
 gTest1 :: RoadMap
 gTest1 = [("7","6",1),("8","2",2),("6","5",2),("0","1",4),("2","5",4),("8","6",6),("2","3",7),("7","8",7),("0","7",8),("1","2",8),("3","4",9),("5","4",10),("1","7",11),("3","5",14)]
+
 
 gTest2 :: RoadMap
 gTest2 = [("0","1",10),("0","2",15),("0","3",20),("1","2",35),("1","3",25),("2","3",30)]
