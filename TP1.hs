@@ -140,7 +140,8 @@ bfs c1 c2 adjList = bfsAux [(0,[c1])] [] maxInt
             | otherwise =
                 let neighbors = adjacentAdjList adjList current
                     newPaths  = [(dist + d, nextCity : path) | (nextCity, d) <- neighbors, not (elem nextCity path)]
-                in bfsAux (queue ++ newPaths) shortestPaths minDistance                                 --Path is incomplete then add every possible next transition to the queue
+                    (endiningC2Paths, continuingPaths)  = Data.List.partition (\(_,p) -> head p == c2) newPaths 
+                in bfsAux (endiningC2Paths ++ queue ++ continuingPaths) shortestPaths minDistance                                 --Path is incomplete then add every possible next transition to the queue
 
 --Find the shortest paths from origin city to destination city
 --shortestPath :: Graph -> origin city -> destination city -> shortest paths from origin city to destination city 

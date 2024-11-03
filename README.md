@@ -43,6 +43,8 @@ In this case we have found a valid path, if it's the first one we have found or 
 ### 3- The first incomplete path has not yet arrived at the destination city
 In this case we remove the incomplete path from the list and check every neighbour to the last Vertex in the incomplete path, if it hasn't been visited yet and its inclusion would not create a path longer than the best path found yet we append to the list a new incomplete path with that neighbour at the end and the respective distance. 
 
+<i>Note:</i> when we add a path to the list if said path ends in city2 it is added to the begining on the list while other paths are added to the end.
+
 ## Travel Sales
 
 The <code>travelSales</code> function intends to find a solution to the TSP, meaning to find a path that starts and ends on the same vertex, that passes through every other vertex only once and that has the smallest distance possible.
