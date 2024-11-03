@@ -150,64 +150,7 @@ shortestPath roadMap c1 c2
     | otherwise = bfs c1 c2 (buildAdjList roadMap)
 
 travelSales :: RoadMap -> Path
-travelSales roadMap
-    | roadMap == [] = []
-    | otherwise = undefined
-
-
-
-            
-{-
-travelSales roadMap = snd (minPath [dp (citiesMask, end, [origin]) | end <- cityIndicies, end /= originIndex])
-    where
-        origin = case roadMap of
-                    ((firstCity,_,_) : _) -> firstCity
-                    [] -> error "There are no edges" 
-        adjList = buildAdjList roadMap
-        citiesList = cities roadMap
-        numCities = length adjList
-        cityIndicies = [0..numCities-1]
-        cityMap = zip citiesList cityIndicies
-        cityLookup = zip cityIndicies citiesList
-        citiesMask = (Data.Bits.shiftL 1 numCities) - 1
-        maxInt = maxBound :: Int
-
-        -- Convert a city to an index
-        cityToIndex :: City -> Int
-        cityToIndex city = case lookup city cityMap of
-                                Just res -> res
-                                Nothing  -> error "Tried to find a city that does not exist"
-
-
-        -- Convert an index to a city
-        indexToCity :: Int -> City
-        indexToCity index = case lookup index cityLookup of
-                                Just res -> res
-                                Nothing  -> error "Tried to find a Index that does not exist"
-
-        originIndex = cityToIndex origin
-
-
-        dp :: (Int, Int, Path) -> (Distance, Path)
-        dp (mask, end, path)
-            | mask == Data.Bits.shiftL 1 end = case distanceAdjList adjList origin (indexToCity end) of 
-                                                    Just dist -> (dist,path++[indexToCity end])
-                                                    Nothing -> (maxInt,[])             
-            | otherwise = minPath
-                [let (distPrev, pathPrev) in]
-                
-                [(dp (Data.Bits.clearBit mask end, prev, path ++ [indexToCity end])) 
-                | prev <- cityIndicies,
-                    Data.Bits.testBit mask prev,
-                    distanceAdjList adjList (indexToCity prev) (indexToCity end) /= Nothing]
-
-        minPath :: [(Distance, Path)] -> (Distance, Path)
-        minPath paths = foldl (\(dist1,path1) (dist2,path2)-> if dist1 < dist2 then (dist1,path1) else (dist2,path2)) (head paths) (tail paths)
--}
-
-{-
-travelSales :: RoadMap -> Path
-travelSales roadMap = tspAux adjList [(0,[origin])] maxInt numCities []
+travelSales roadMap = tspAux adjList [(0,[origin])] maxInt []
     where
         adjList = buildAdjList roadMap 
         origin = case roadMap of
@@ -216,22 +159,24 @@ travelSales roadMap = tspAux adjList [(0,[origin])] maxInt numCities []
         maxInt = maxBound :: Int
         numCities = length adjList
 
-        tspAux :: AdjList -> [(Distance,Path)] -> Distance -> Int -> Path -> Path
-        tspAux _ [] _ _ bestPath = bestPath
-        tspAux adjList ((currDist, currPath@(currCity : currVisited)) : queue) bestDist numCities bestPath
+        tspAux :: AdjList -> [(Distance,Path)] -> Distance -> Path -> Path
+        tspAux _ [] _ bestPath = bestPath
+        tspAux adjList ((currDist, currPath@(currCity : currVisited)) : queue) bestDist bestPath
             | numCities == length currPath =
                 case lookup origin (adjacentAdjList adjList currCity) of
                     Just returnDist -> if (currDist + returnDist) < bestDist 
-                                            then tspAux adjList queue (currDist + returnDist) numCities (origin : currPath)     -- Found a smaller TSP path
-                                            else tspAux adjList queue bestDist numCities bestPath                               -- The return edge makes the path too long
-                    Nothing -> tspAux adjList queue bestDist numCities bestPath                                                 -- No edge to return to the first edge
-            | otherwise = tspAux adjList (queue ++ newPaths) bestDist numCities bestPath  
+                                            then tspAux adjList queue (currDist + returnDist) (origin : currPath)     -- Found a smaller TSP path
+                                            else tspAux adjList queue bestDist bestPath                               -- The return edge makes the path too long
+                    Nothing -> tspAux adjList queue bestDist bestPath                                       -- No edge to return to the first edge
+            | otherwise = tspAux adjList (queue ++ newPaths) bestDist bestPath  
                 where 
                     neighbors = adjacentAdjList adjList currCity
                     newPaths = [(currDist + dist, nextCity : currPath) | (nextCity,dist) <- neighbors, not (elem nextCity currPath), currDist + dist <= bestDist]
--}
+
+
+
 tspBruteForce :: RoadMap -> Path
-tspBruteForce = undefined -- Our  group only has 2 elements therefore this function was not implemented
+tspBruteForce = undefined -- Our group only has 2 elements therefore this function was not implemented
 
 gTest1 :: RoadMap
 gTest1 = [("7","6",1),("8","2",2),("6","5",2),("0","1",4),("2","5",4),("8","6",6),("2","3",7),("7","8",7),("0","7",8),("1","2",8),("3","4",9),("5","4",10),("1","7",11),("3","5",14)]
